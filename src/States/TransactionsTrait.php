@@ -36,7 +36,7 @@ trait TransactionsTrait
     /**
      * Id used for current transaction.
      *
-     * @var String
+     * @var int|string
      */
     protected $transactionId;
 
@@ -70,7 +70,7 @@ trait TransactionsTrait
     /**
      * Send a message within this transaction.
      *
-     * @param $destination
+     * @param string $destination
      * @param \Stomp\Transport\Message $message
      * @return bool
      */

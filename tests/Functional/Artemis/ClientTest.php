@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Stomp\Tests\Functional\ActiveMq;
+namespace Stomp\Tests\Functional\Artemis;
 
 use PHPUnit\Framework\TestCase;
 use Stomp\Broker\ActiveMq\ActiveMq;
@@ -36,8 +36,8 @@ class ClientTest extends TestCase
      */
     private $Stomp;
 
-    private $queue = '/queue/test';
-    private $topic = '/topic/test';
+    private $queue = 'queue/test';
+    private $topic = 'topic/test';
 
     /**
      * Prepares the environment before running a test.
@@ -83,11 +83,9 @@ class ClientTest extends TestCase
 
         $this->assertFalse($this->Stomp->getConnection()->hasDataToRead(), 'Has frame to read when non expected');
 
-        $this->Stomp->send($this->queue, 'testHasFrameToRead');
+        $this->Stomp->send($this->queue . '/frame_to_read', 'testHasFrameToRead');
 
-        $this->simpleStomp->subscribe($this->queue, 'mysubid', 'client');
-
-        $this->assertTrue($this->Stomp->getConnection()->hasDataToRead(), 'Did not have frame to read when expected');
+        $this->simpleStomp->subscribe($this->queue . '/frame_to_read', 'mysubid', 'client');
 
         $frame = $this->Stomp->readFrame();
 
@@ -112,17 +110,13 @@ class ClientTest extends TestCase
         $messages = [];
 
         for ($x = 0; $x < 100; ++$x) {
-            $this->Stomp->send($this->queue, $x);
+            $this->Stomp->send($this->queue . '/ack', $x);
             $messages[$x] = 'sent';
         }
 
-        $this->Stomp->disconnect();
 
+        $this->simpleStomp->subscribe($this->queue . '/ack', 'mysubid', 'client');
         for ($y = 0; $y < 100; $y += 10) {
-            $this->Stomp->connect();
-
-            $this->simpleStomp->subscribe($this->queue, 'mysubid', 'client');
-
             for ($x = $y; $x < $y + 10; ++$x) {
                 $frame = $this->Stomp->readFrame();
                 $this->assertInstanceOf(Frame::class, $frame);
@@ -140,8 +134,6 @@ class ClientTest extends TestCase
 
                 $this->simpleStomp->ack($frame);
             }
-
-            $this->Stomp->disconnect();
         }
 
         $un_acked_messages = [];
@@ -169,13 +161,13 @@ class ClientTest extends TestCase
             $this->Stomp->connect();
         }
         $this->simpleStomp->begin("tx1");
-        $this->assertTrue($this->Stomp->send($this->queue, 'testSend', ["transaction" => "tx1"]));
+        $this->assertTrue($this->Stomp->send($this->queue . '/abort', 'testSend', ["transaction" => "tx1"]));
         $this->simpleStomp->abort("tx1");
 
-        $this->simpleStomp->subscribe($this->queue, 'mysubid');
+        $this->simpleStomp->subscribe($this->queue . '/abort', 'mysubid');
         $frame = $this->Stomp->readFrame();
         $this->assertFalse($frame);
-        $this->simpleStomp->unsubscribe($this->queue, 'mysubid');
+        $this->simpleStomp->unsubscribe($this->queue . '/abort', 'mysubid');
         $this->Stomp->disconnect();
     }
 
@@ -230,13 +222,13 @@ class ClientTest extends TestCase
         if (! $this->Stomp->isConnected()) {
             $this->Stomp->connect();
         }
-        $this->Stomp->send($this->queue, 'testReadFrame');
-        $this->simpleStomp->subscribe($this->queue, 'mysubid', 'client');
+        $this->Stomp->send($this->queue . '/read_frame', 'testReadFrame');
+        $this->simpleStomp->subscribe($this->queue . '/read_frame', 'mysubid', 'client');
         $frame = $this->Stomp->readFrame();
         $this->assertInstanceOf(Frame::class, $frame);
         $this->assertEquals('testReadFrame', $frame->body, 'Body of test frame does not match sent message');
         $this->simpleStomp->ack($frame);
-        $this->simpleStomp->unsubscribe($this->queue, 'mysubid');
+        $this->simpleStomp->unsubscribe($this->queue . '/read_frame', 'mysubid');
     }
 
     /**
@@ -247,13 +239,13 @@ class ClientTest extends TestCase
         if (! $this->Stomp->isConnected()) {
             $this->Stomp->connect();
         }
-        $this->assertTrue($this->Stomp->send($this->queue, 'testSend'));
-        $this->simpleStomp->subscribe($this->queue, 'mysubid', 'client');
+        $this->assertTrue($this->Stomp->send($this->queue . '/send', 'testSend'));
+        $this->simpleStomp->subscribe($this->queue . '/send', 'mysubid', 'client');
         $frame = $this->Stomp->readFrame();
         $this->assertInstanceOf(Frame::class, $frame);
         $this->assertEquals('testSend', $frame->body, 'Body of test frame does not match sent message');
         $this->simpleStomp->ack($frame);
-        $this->simpleStomp->unsubscribe($this->queue, 'mysubid');
+        $this->simpleStomp->unsubscribe($this->queue . '/send', 'mysubid');
     }
 
     /**
@@ -264,8 +256,8 @@ class ClientTest extends TestCase
         if (! $this->Stomp->isConnected()) {
             $this->Stomp->connect();
         }
-        $this->assertTrue($this->simpleStomp->subscribe($this->queue, 'mysubid'));
-        $this->simpleStomp->unsubscribe($this->queue, 'mysubid');
+        $this->assertTrue($this->simpleStomp->subscribe($this->queue . '/subscribe', 'mysubid'));
+        $this->simpleStomp->unsubscribe($this->queue . '/subscribe', 'mysubid');
     }
 
     /**
@@ -280,9 +272,15 @@ class ClientTest extends TestCase
         $header = [];
         $header['transformation'] = 'jms-map-json';
         $mapMessage = new Map($body, $header);
-        $this->Stomp->send($this->queue, $mapMessage);
+        $this->Stomp->send($this->queue . '/transformation', $mapMessage);
 
-        $this->simpleStomp->subscribe($this->queue, 'mysubid', 'auto', null, ['transformation' => 'jms-map-json']);
+        $this->simpleStomp->subscribe(
+            $this->queue . '/transformation',
+            'mysubid',
+            'auto',
+            null,
+            ['transformation' => 'jms-map-json']
+        );
         $msg = $this->Stomp->readFrame();
         $this->assertInstanceOf(Map::class, $msg);
 
@@ -301,9 +299,9 @@ class ClientTest extends TestCase
         }
         $body = 'test';
         $mapMessage = new Bytes($body);
-        $this->simpleStomp->subscribe($this->queue, 'mysubid', 'client-individual');
+        $this->simpleStomp->subscribe($this->queue . '/byte', 'mysubid', 'client-individual');
 
-        $this->Stomp->send($this->queue, $mapMessage);
+        $this->Stomp->send($this->queue . '/byte', $mapMessage);
 
         $msg = $this->Stomp->readFrame();
         $this->assertInstanceOf(Frame::class, $msg);
@@ -320,8 +318,8 @@ class ClientTest extends TestCase
         if (! $this->Stomp->isConnected()) {
             $this->Stomp->connect();
         }
-        $this->simpleStomp->subscribe($this->queue, 'mysubid');
-        $this->assertTrue($this->simpleStomp->unsubscribe($this->queue, 'mysubid'));
+        $this->simpleStomp->subscribe($this->queue . '/subscribe', 'mysubid');
+        $this->assertTrue($this->simpleStomp->unsubscribe($this->queue . '/subscribe', 'mysubid'));
     }
 
     public function testDurable()
@@ -336,7 +334,7 @@ class ClientTest extends TestCase
         $producer = ClientProvider::getClient();
         $producer->setSync(false);
         $producer->connect();
-        $producer->send($this->topic, 'test message', ['persistent' => 'true']);
+        $producer->send($this->topic . '/durable', 'test message', ['persistent' => 'true']);
         $producer->disconnect();
     }
 
@@ -352,7 +350,7 @@ class ClientTest extends TestCase
         /**
          * @var $amq ActiveMq
          */
-        $consumer->sendFrame($amq->getSubscribeFrame($this->topic, 'test', 'auto', null, true));
+        $consumer->sendFrame($amq->getSubscribeFrame($this->topic . '/durable', 'test', 'auto', null, true));
 
         $consumer->disconnect(true);
     }
@@ -370,7 +368,7 @@ class ClientTest extends TestCase
         /**
          * @var $amq ActiveMq
          */
-        $consumer2->sendFrame($amq->getSubscribeFrame($this->topic, 'test', 'client', null, true));
+        $consumer2->sendFrame($amq->getSubscribeFrame($this->topic . '/durable', 'test', 'client', null, true));
 
 
         $frame = $consumer2->readFrame();
@@ -409,7 +407,7 @@ class ClientTest extends TestCase
         $this->Stomp->getConnection()->getObservers()->addObserver(new HeartbeatEmitter($this->Stomp->getConnection()));
 
         $this->Stomp->connect();
-        $this->assertTrue($this->simpleStomp->subscribe($this->queue, 'mysubid', 'client'));
+        $this->assertTrue($this->simpleStomp->subscribe($this->queue . '/heartbeat', 'mysubid', 'client'));
 
         $this->Stomp->readFrame(); // ~ 0.25 seconds
         usleep(250000); // 0.25 seconds
@@ -417,7 +415,7 @@ class ClientTest extends TestCase
         $this->Stomp->readFrame(); // ~ 0.25 seconds
 
         // Send a frame.
-        $this->assertTrue($this->Stomp->send($this->queue, 'testReadFrame'));
+        $this->assertTrue($this->Stomp->send($this->queue . '/heartbeat', 'testReadFrame'));
 
         $tries = 0;
         // Check we now have a frame to read.
@@ -428,7 +426,7 @@ class ClientTest extends TestCase
                 $this->assertInstanceOf(Frame::class, $frame);
                 $this->assertEquals('testReadFrame', $frame->body, 'Body of test frame does not match sent message');
                 $this->simpleStomp->ack($frame);
-                $this->simpleStomp->unsubscribe($this->queue, 'mysubid');
+                $this->simpleStomp->unsubscribe($this->queue . '/heartbeat', 'mysubid');
                 break;
             }
             $this->assertLessThan(10, $tries, 'Was not able to read the frame inside the expected time.');

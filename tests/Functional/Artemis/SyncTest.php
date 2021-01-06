@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Stomp\Tests\Functional\ActiveMq;
+namespace Stomp\Tests\Functional\Artemis;
 
 use PHPUnit\Framework\TestCase;
 use Stomp\Client;
@@ -57,9 +57,9 @@ class SyncTest extends TestCase
     public function testSyncSub()
     {
         $this->assertTrue($this->Stomp->connect());
-        $this->assertTrue($this->simpleStomp->subscribe('/queue/test', 'mysubid', 'client-individual'));
-        $this->assertTrue($this->Stomp->send('/queue/test', 'test 1'));
-        $this->assertTrue($this->Stomp->send('/queue/test', 'test 2'));
+        $this->assertTrue($this->simpleStomp->subscribe('queue/sync_sub', 'mysubid', 'client-individual'));
+        $this->assertTrue($this->Stomp->send('queue/sync_sub', 'test 1'));
+        $this->assertTrue($this->Stomp->send('queue/sync_sub', 'test 2'));
 
         $this->Stomp->getConnection()->setReadTimeout(0, 500000);
 
@@ -77,10 +77,10 @@ class SyncTest extends TestCase
         $this->assertTrue($this->Stomp->connect());
         $this->Stomp->setSync(true);
         $this->assertTrue($this->simpleStomp->begin('my-id'));
-        $this->assertTrue($this->Stomp->send('/queue/test', 'test 1', ['transaction' => 'my-id']));
+        $this->assertTrue($this->Stomp->send('queue/transaction', 'test 1', ['transaction' => 'my-id']));
         $this->assertTrue($this->simpleStomp->commit('my-id'));
 
-        $this->assertTrue($this->simpleStomp->subscribe('/queue/test', 'mysubid'));
+        $this->assertTrue($this->simpleStomp->subscribe('queue/transaction', 'mysubid'));
 
         $frame = $this->Stomp->readFrame();
         $this->assertInstanceOf(Frame::class, $frame);
@@ -91,10 +91,10 @@ class SyncTest extends TestCase
     {
         $this->assertTrue($this->Stomp->connect());
         $this->assertTrue($this->simpleStomp->begin('my-id'));
-        $this->assertTrue($this->Stomp->send('/queue/test', 'test t-id', ['transaction' => 'my-id']));
+        $this->assertTrue($this->Stomp->send('queue/transaction_abort', 'test t-id', ['transaction' => 'my-id']));
         $this->assertTrue($this->simpleStomp->abort('my-id'));
 
-        $this->assertTrue($this->simpleStomp->subscribe('/queue/test', 'mysubid'));
+        $this->assertTrue($this->simpleStomp->subscribe('queue/transaction_abort', 'mysubid'));
 
         $this->Stomp->getConnection()->setReadTimeout(0, 500000);
 

@@ -49,7 +49,7 @@ class Client
     /**
      * Connection session id
      *
-     * @var string
+     * @var string|null
      */
     private $sessionId;
 
@@ -61,14 +61,13 @@ class Client
     private $unprocessedFrames = [];
 
     /**
-     *
-     * @var Connection
+     * @var Connection|null
      */
     private $connection;
 
     /**
      *
-     * @var Protocol
+     * @var Protocol|null
      */
     private $protocol;
 
@@ -160,31 +159,36 @@ class Client
         $this->host = $host;
     }
 
-  /**
-   * Set the desired heartbeat for the connection.
-   *
-   * A heartbeat is a specific message that will be send / received when no other data is send / received
-   * within an interval - to indicate that the connection is still stable. If client and server agree on a beat and
-   * the interval passes without any data activity / beats the connection will be considered as broken and closed.
-   *
-   * If you define a heartbeat, you must assure that your application will send data within the interval.
-   * You can add \Stomp\Network\Observer\HeartbeatEmitter to your connection in order to send beats automatically.
-   *
-   * If you don't use HeartbeatEmitter you must either send messages within the interval
-   * or make calls to Connection::sendAlive()
-   *
-   * @param int $send
-   *   Number of milliseconds between expected sending of heartbeats. 0 means
-   *   no heartbeats sent.
-   * @param int $receive
-   *   Number of milliseconds between expected receipt of heartbeats. 0 means
-   *   no heartbeats expected. (not yet supported by this client)
-   * @see \Stomp\Network\Observer\HeartbeatEmitter
-   * @see \Stomp\Network\Connection::sendAlive()
-   */
+    /**
+     * Set the desired heartbeat for the connection.
+     *
+     * A heartbeat is a specific message that will be send / received when no other data is send / received
+     * within an interval - to indicate that the connection is still stable. If client and server agree on a beat and
+     * the interval passes without any data activity / beats the connection will be considered as broken and closed.
+     *
+     * If you want to make sure that the server is still available, you should use the ServerAliveObserver
+     * in combination with an requested server heartbeat interval.
+     *
+     * If you define a heartbeat for client side, you must assure that
+     * your application will send data within the interval.
+     * You can add \Stomp\Network\Observer\HeartbeatEmitter to your connection in order to send beats automatically.
+     *
+     * If you don't use HeartbeatEmitter you must either send messages within the interval
+     * or make calls to Connection::sendAlive()
+     *
+     * @param int $send
+     *   Number of milliseconds between expected sending of heartbeats. 0 means
+     *   no heartbeats sent.
+     * @param int $receive
+     *   Number of milliseconds between expected receipt of heartbeats. 0 means
+     *   no heartbeats expected. (not yet supported by this client)
+     * @see \Stomp\Network\Observer\ServerAliveObserver
+     * @see \Stomp\Network\Observer\HeartbeatEmitter
+     * @see \Stomp\Network\Connection::sendAlive()
+     */
     public function setHeartbeat($send = 0, $receive = 0)
     {
-      $this->heartbeat = [$send, $receive];
+        $this->heartbeat = [$send, $receive];
     }
 
     /**
@@ -206,7 +210,13 @@ class Client
 
         $this->host = $this->host ?: $this->connection->getHost();
 
-        $connectFrame = $this->protocol->getConnectFrame($this->login, $this->passcode, $this->versions, $this->host, $this->heartbeat);
+        $connectFrame = $this->protocol->getConnectFrame(
+            $this->login,
+            $this->passcode,
+            $this->versions,
+            $this->host,
+            $this->heartbeat
+        );
         $this->sendFrame($connectFrame, false);
 
         if ($frame = $this->getConnectedFrame()) {
@@ -231,13 +241,13 @@ class Client
      * @throws ConnectionException
      * @throws Exception\ErrorFrameException
      */
-    private function getConnectedFrame() {
-        $deadline = microtime(true) + ($this->getConnection()->getConnectTimeout() * 1000000);
+    private function getConnectedFrame()
+    {
+        $deadline = microtime(true) + $this->getConnection()->getConnectTimeout();
         do {
             if ($frame = $this->connection->readFrame()) {
                 return $frame;
             }
-
         } while (microtime(true) <= $deadline);
 
         return null;
@@ -380,7 +390,7 @@ class Client
     /**
      * Current stomp session ID
      *
-     * @return string
+     * @return string|null
      */
     public function getSessionId()
     {
