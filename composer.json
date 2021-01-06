@@ -1,5 +1,5 @@
 {
-    "name": "stomp-php/stomp-php",
+    "name": "invia-de/stomp-php",
     "description": "stomp support for PHP",
     "keywords": ["messaging", "stomp", "jms", "activemq", "rabbitmq", "apollomq"],
     "homepage": "http://github.com/stomp-php/stomp-php",
