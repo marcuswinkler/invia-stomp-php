@@ -67,8 +67,13 @@ class Protocol
      * @param int[] $heartbeat
      * @return \Stomp\Transport\Frame
      */
-    final public function getConnectFrame($login = '', $passcode = '', array $versions = [], $host = null, $heartbeat = [0, 0])
-    {
+    final public function getConnectFrame(
+        $login = '',
+        $passcode = '',
+        array $versions = [],
+        $host = null,
+        $heartbeat = [0, 0]
+    ) {
         $frame = $this->createFrame('CONNECT');
         $frame->legacyMode(true);
 
@@ -198,7 +203,11 @@ class Protocol
         $ack = $this->createFrame('ACK');
         $ack['transaction'] = $transactionId;
         if ($this->hasVersion(Version::VERSION_1_2)) {
-            $ack['id'] = $frame->getMessageId();
+            if (isset($frame['ack'])) {
+                $ack['id'] = $frame['ack'];
+            } else {
+                $ack['id'] = $frame->getMessageId();
+            }
         } else {
             $ack['message-id'] = $frame->getMessageId();
             if ($this->hasVersion(Version::VERSION_1_1)) {

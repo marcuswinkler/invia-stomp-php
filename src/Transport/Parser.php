@@ -31,7 +31,7 @@ class Parser
     /**
      * Frame that has been parsed last.
      *
-     * @var Frame
+     * @var Frame|null
      */
     private $frame;
 
@@ -52,7 +52,7 @@ class Parser
     /**
      * Active Frame expected body size (content-length header)
      *
-     * @var integer
+     * @var integer|null
      */
     private $expectedBodyLength;
 
@@ -117,7 +117,7 @@ class Parser
     private $factory;
 
     /**
-     * @var ConnectionObserver
+     * @var ConnectionObserver|null
      */
     private $observer;
 
@@ -235,6 +235,7 @@ class Parser
             break;
         }
 
+        /** @phpstan-ignore-next-line */
         if ($this->offset > 0) {
             // remove parsed buffer
             $this->buffer = substr($this->buffer, $this->offset);
@@ -334,12 +335,12 @@ class Parser
     /**
      * Extracts command and headers from given header source.
      *
-     * @param $source
+     * @param string $source
      * @return void
      */
     private function extractFrameMeta($source)
     {
-        $headers = preg_split("/[\r?\n]+/", $source);
+        $headers = preg_split("/(\r?\n)+/", $source);
 
         $this->command = array_shift($headers);
 
@@ -360,7 +361,7 @@ class Parser
     /**
      * Decodes header values.
      *
-     * @param $value
+     * @param string $value
      * @return string
      */
     private function decodeHeaderValue($value)

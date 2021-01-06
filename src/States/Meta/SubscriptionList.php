@@ -42,7 +42,7 @@ class SubscriptionList implements IteratorAggregate, ArrayAccess, Countable
      * Returns the subscription the frame belongs to or false if no matching subscription was found.
      *
      * @param Frame $frame
-     * @return Subscription
+     * @return Subscription|false
      */
     public function getSubscription(Frame $frame)
     {
@@ -56,6 +56,8 @@ class SubscriptionList implements IteratorAggregate, ArrayAccess, Countable
 
     /**
      * @inheritdoc
+     *
+     * @return \Iterator|Subscription[]
      */
     public function getIterator()
     {
@@ -64,6 +66,8 @@ class SubscriptionList implements IteratorAggregate, ArrayAccess, Countable
 
     /**
      * @inheritdoc
+     *
+     * @return bool
      */
     public function offsetExists($offset)
     {
@@ -72,6 +76,8 @@ class SubscriptionList implements IteratorAggregate, ArrayAccess, Countable
 
     /**
      * @inheritdoc
+     *
+     * @return Subscription
      */
     public function offsetGet($offset)
     {

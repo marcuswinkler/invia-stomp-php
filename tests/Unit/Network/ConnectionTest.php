@@ -38,6 +38,38 @@ class ConnectionTest extends TestCase
         $this->assertEquals('host2', $list[1]['host'], 'List is not in expected order.');
     }
 
+    /**
+     * Data provider for testBrokerUriShouldRandomizeHosts().
+     */
+    public function testBrokerUriShouldRandomizeHostsProvider()
+    {
+        return [
+            'non-failover URI' => ['tcp://host1:61614', false],
+            'no randomize param' => ['failover://(tcp://host1:61614,ssl://host2:61612)', false],
+            'randomize=true param' => ['failover://(tcp://host1:61614,ssl://host2:61612)?randomize=true', true],
+            'randomize=false param' => ['failover://(tcp://host1:61614,ssl://host2:61612)?randomize=false', false]
+        ];
+    }
+
+    /**
+     * Tests Connection::shouldRandomizeHosts().
+     *
+     * @param string $uri
+     *   The broker URI string.
+     * @param bool $expected
+     *   The expected result, TRUE/FALSE.
+     *
+     * @dataProvider testBrokerUriShouldRandomizeHostsProvider
+     */
+    public function testBrokerUriShouldRandomizeHosts($uri, $expected)
+    {
+        $connection = new Connection($uri);
+        $shouldRandomizeHosts = new ReflectionMethod($connection, 'shouldRandomizeHosts');
+        $shouldRandomizeHosts->setAccessible(true);
+
+        $this->assertEquals($expected, $shouldRandomizeHosts->invoke($connection));
+    }
+
     public function testBrokerUriParseSimple()
     {
         $connection = new Connection('tcp://host1');
@@ -169,5 +201,42 @@ class ConnectionTest extends TestCase
         $this->assertEquals($body, $frame->body);
         fclose($fakeStreamResource);
         stream_wrapper_unregister('stompFakeStream');
+    }
+
+
+    /**
+     * @expectedException  \Stomp\Exception\ConnectionException
+     */
+    public function testSendAliveWillCauseConnectionException()
+    {
+        stream_wrapper_register('stompFakeStream', FakeStream::class);
+
+
+        $mock = $this->getMockBuilder(Connection::class)
+            ->setMethods(['getConnection'])
+            ->setConstructorArgs(['stompFakeStream://notInUse'])
+            ->getMock();
+        $fakeStreamResource = fopen('stompFakeStream://notInUse', 'rw');
+        $mock->method('getConnection')->willReturn($fakeStreamResource);
+
+        /**
+         * @var $mock Connection
+         */
+        $mock->connect();
+
+        $exception = null;
+        try {
+            FakeStream::$sendFails = true;
+            $mock->sendAlive(0.150);
+        } catch (\Exception $error) {
+            $exception = $error;
+        }
+        FakeStream::$sendFails = false;
+        fclose($fakeStreamResource);
+        stream_wrapper_unregister('stompFakeStream');
+        if (!$exception) {
+            $this->fail('Excepted exception.');
+        }
+        throw $exception;
     }
 }
