@@ -1,5 +1,5 @@
 {
-    "name": "invia-de/stomp-php",
+    "name": "stomp-php/stomp-php",
     "description": "stomp support for PHP",
     "keywords": ["messaging", "stomp", "jms", "activemq", "rabbitmq", "apollomq"],
     "homepage": "http://github.com/stomp-php/stomp-php",
@@ -25,12 +25,10 @@
         "sort-packages": true
     },
     "require": {
-        "php": ">=5.6"
+        "php": "^7.3|^8.0"
     },
     "require-dev": {
-        "phpmd/phpmd": ">=2.6",
-        "phpunit/phpunit": ">=5.7",
-        "squizlabs/php_codesniffer": ">=2.9"
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {

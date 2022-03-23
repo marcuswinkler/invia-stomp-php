@@ -39,15 +39,21 @@ class DurableSubscription extends ActiveMqMode
      * @param string $topic
      * @param string $selector
      * @param string $ack
+     * @param string $subscriptionId
      * @throws StompException
      */
-    public function __construct(Client $client, $topic, $selector = null, $ack = 'auto')
+    public function __construct(Client $client, $topic, $selector = null, $ack = 'auto', $subscriptionId = null)
     {
         parent::__construct($client);
         if (!$client->getClientId()) {
             throw new StompException('Client must have been configured to use a specific clientId!');
         }
-        $this->subscription = new Subscription($topic, $selector, $ack, $client->getClientId());
+        $server = $client->getProtocol()->getServer();
+        if (is_null($subscriptionId) && substr($server, 0, 16) === 'ActiveMQ-Artemis') {
+            throw new StompException('Durable subscription requires a specific subscriptionId!');
+        }
+        $subscriptionId = isset($subscriptionId) ? $subscriptionId : $client->getClientId();
+        $this->subscription = new Subscription($topic, $selector, $ack, $subscriptionId);
     }
 
     /**

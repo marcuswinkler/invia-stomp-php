@@ -1,0 +1,44 @@
+name: CI
+on: [pull_request]
+jobs:
+  static_analysis:
+    name: Static analysis with phpstan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+
+      - uses: "ramsey/composer-install@v1"
+
+      - run: composer require --dev phpstan/phpstan
+
+      - run: vendor/bin/phpstan analyse
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.3', '7.4', '8.0', '8.1']
+    name: PHP ${{ matrix.php }} tests
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: xdebug
+          ini-values: error_reporting=E_ALL
+
+      - run: ./travisci/bin/start.sh
+
+      - uses: "ramsey/composer-install@v1"
+
+      - run: |
+          ./travisci/bin/logs.sh
+          vendor/bin/phpunit --debug
+
+      - run: ./travisci/bin/stop.sh

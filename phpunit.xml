@@ -1,25 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- http://www.phpunit.de/manual/current/en/appendixes.configuration.html -->
+<!-- https://phpunit.readthedocs.io/en/stable/configuration.html -->
 <phpunit
-    backupGlobals               = "false"
-    backupStaticAttributes      = "false"
-    colors                      = "true"
-    convertErrorsToExceptions   = "true"
-    convertNoticesToExceptions  = "true"
-    convertWarningsToExceptions = "true"
-    processIsolation            = "false"
-    stopOnFailure               = "false"
-    syntaxCheck                 = "false"
-    bootstrap                   = "tests/bootstrap.php" >
-    <filter>
-        <blacklist>
-            <directory>vendor</directory>
-        </blacklist>
-        <whitelist>
-            <directory>src</directory>
-        </whitelist>
-    </filter>
+    backupGlobals="false"
+    backupStaticAttributes="false"
+    colors="true"
+    convertDeprecationsToExceptions="true"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    processIsolation="false"
+    stopOnFailure="false"
+    bootstrap="tests/bootstrap.php"
+>
+    <coverage>
+        <include>
+            <directory>src/</directory>
+        </include>
+        <exclude>
+            <directory>vendor/</directory>
+        </exclude>
+        <report>
+            <text outputFile="php://stdout" showUncoveredFiles="true"/>
+        </report>
+    </coverage>
     <testsuites>
         <testsuite name="stomp-php Functional Test Suite">
             <directory>tests/Functional/</directory>
@@ -31,7 +35,7 @@
             <directory>tests/Unit/</directory>
         </testsuite>
     </testsuites>
-    <logging>
-        <log type="coverage-text" target="php://stdout" showUncoveredFiles="true"/>
-    </logging>
+    <php>
+        <ini name="error_reporting" value="-1"/>
+    </php>
 </phpunit>

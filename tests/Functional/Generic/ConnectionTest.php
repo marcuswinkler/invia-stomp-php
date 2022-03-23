@@ -9,6 +9,7 @@
 
 namespace Stomp\Tests\Functional\Generic;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Stomp\Exception\ConnectionException;
 use Stomp\Exception\ErrorFrameException;
@@ -24,9 +25,9 @@ class ConnectionTest extends TestCase
 {
     public function testReadFrameThrowsExceptionIfStreamIsBroken()
     {
-        /** @var Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
+        /** @var Connection|MockObject $connection */
         $connection = $this->getMockBuilder(Connection::class)
-            ->setMethods(['hasDataToRead', 'connectSocket'])
+            ->onlyMethods(['hasDataToRead', 'connectSocket'])
             ->setConstructorArgs(['tcp://host'])
             ->getMock();
 
@@ -41,15 +42,20 @@ class ConnectionTest extends TestCase
             $connection->readFrame();
             $this->fail('Expected a exception!');
         } catch (ConnectionException $exception) {
-            $this->assertContains('Was not possible to read data from stream.', $exception->getMessage());
+            $this->assertStringContainsString('Was not possible to read data from stream.', $exception->getMessage());
+        } catch (\TypeError $exception) {
+            $this->assertStringContainsString(
+                'fread(): supplied resource is not a valid stream resource',
+                $exception->getMessage()
+            );
         }
     }
 
     public function testReadFrameThrowsExceptionIfErrorFrameIsReceived()
     {
-        /** @var \Stomp\Network\Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
+        /** @var \Stomp\Network\Connection|MockObject $connection */
         $connection = $this->getMockBuilder(Connection::class)
-            ->setMethods(['hasDataToRead', 'connectSocket'])
+            ->onlyMethods(['hasDataToRead', 'connectSocket'])
             ->setConstructorArgs(['tcp://host'])
             ->getMock();
 
@@ -67,7 +73,7 @@ class ConnectionTest extends TestCase
             $connection->readFrame();
             $this->fail('Expected a exception!');
         } catch (ErrorFrameException $exception) {
-            $this->assertContains('stomp-err-info', $exception->getMessage());
+            $this->assertStringContainsString('stomp-err-info', $exception->getMessage());
             $this->assertEquals('body', $exception->getFrame()->body);
         }
         fclose($fp);
@@ -75,9 +81,9 @@ class ConnectionTest extends TestCase
 
     public function testWriteFrameThrowsExceptionIfConnectionIsBroken()
     {
-        /** @var \Stomp\Network\Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
+        /** @var \Stomp\Network\Connection|MockObject $connection */
         $connection = $this->getMockBuilder(Connection::class)
-            ->setMethods(['connectSocket'])
+            ->onlyMethods(['connectSocket'])
             ->setConstructorArgs(['tcp://host'])
             ->getMock();
 
@@ -92,16 +98,16 @@ class ConnectionTest extends TestCase
             $connection->writeFrame(new Frame('TEST'));
             $this->fail('Expected a exception!');
         } catch (ConnectionException $exception) {
-            $this->assertContains('Was not possible to write frame!', $exception->getMessage());
+            $this->assertStringContainsString('Was not possible to write frame!', $exception->getMessage());
         }
         fclose($fp);
     }
 
     public function testHasDataToReadThrowsExceptionIfConnectionIsBroken()
     {
-        /** @var \Stomp\Network\Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
+        /** @var \Stomp\Network\Connection|MockObject $connection */
         $connection = $this->getMockBuilder(Connection::class)
-            ->setMethods(['isConnected', 'connectSocket'])
+            ->onlyMethods(['isConnected', 'connectSocket'])
             ->setConstructorArgs(['tcp://host'])
             ->getMock();
 
@@ -128,7 +134,12 @@ class ConnectionTest extends TestCase
             $connection->readFrame();
             $this->fail('Expected a exception!');
         } catch (ConnectionException $exception) {
-            $this->assertContains('Check failed to determine if the socket is readable', $exception->getMessage());
+            $this->assertStringContainsString('Check failed to determine if the socket is readable', $exception->getMessage());
+        } catch (\ValueError $exception) {
+            $this->assertStringContainsString(
+                'No stream arrays were passed',
+                $exception->getMessage()
+            );
         }
     }
 
@@ -139,7 +150,7 @@ class ConnectionTest extends TestCase
             $connection->connect();
             $this->fail('Expected an exception!');
         } catch (ConnectionException $ex) {
-            $this->assertContains('Could not connect to a broker', $ex->getMessage());
+            $this->assertStringContainsString('Could not connect to a broker', $ex->getMessage());
 
             $this->assertInstanceOf(
                 ConnectionException::class,
