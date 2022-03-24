@@ -10,6 +10,7 @@
 namespace Stomp\Tests\Unit\Network;
 
 use Exception;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use Stomp\Exception\ConnectionException;
@@ -41,7 +42,7 @@ class ConnectionTest extends TestCase
     /**
      * Data provider for testBrokerUriShouldRandomizeHosts().
      */
-    public function testBrokerUriShouldRandomizeHostsProvider()
+    public function brokerUriProvider()
     {
         return [
             'non-failover URI' => ['tcp://host1:61614', false],
@@ -59,7 +60,7 @@ class ConnectionTest extends TestCase
      * @param bool $expected
      *   The expected result, TRUE/FALSE.
      *
-     * @dataProvider testBrokerUriShouldRandomizeHostsProvider
+     * @dataProvider brokerUriProvider
      */
     public function testBrokerUriShouldRandomizeHosts($uri, $expected)
     {
@@ -117,9 +118,9 @@ class ConnectionTest extends TestCase
 
     public function testConnectionSetupTriesFullHostListBeforeGivingUp()
     {
-        /** @var Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
+        /** @var Connection|MockObject $connection */
         $connection = $this->getMockBuilder(Connection::class)
-            ->setMethods(['connectSocket'])
+            ->onlyMethods(['connectSocket'])
             ->setConstructorArgs(['failover://(tcp://host1,tcp://host2,tcp://host3)'])
             ->getMock();
 
@@ -142,7 +143,7 @@ class ConnectionTest extends TestCase
             $connection->connect();
             $this->fail('No connection was established, expected exception!');
         } catch (Exception $ex) {
-            $this->assertContains('Could not connect to a broker', $ex->getMessage());
+            $this->assertStringContainsString('Could not connect to a broker', $ex->getMessage());
         }
     }
 
@@ -181,7 +182,7 @@ class ConnectionTest extends TestCase
         stream_wrapper_register('stompFakeStream', FakeStream::class);
 
         $mock = $this->getMockBuilder(Connection::class)
-            ->setMethods(['getConnection'])
+            ->onlyMethods(['getConnection'])
             ->setConstructorArgs(['stompFakeStream://notInUse'])
             ->getMock();
         $fakeStreamResource = fopen('stompFakeStream://notInUse', 'rw');
@@ -203,17 +204,15 @@ class ConnectionTest extends TestCase
         stream_wrapper_unregister('stompFakeStream');
     }
 
-
-    /**
-     * @expectedException  \Stomp\Exception\ConnectionException
-     */
     public function testSendAliveWillCauseConnectionException()
     {
+        $this->expectException(ConnectionException::class);
+
         stream_wrapper_register('stompFakeStream', FakeStream::class);
 
 
         $mock = $this->getMockBuilder(Connection::class)
-            ->setMethods(['getConnection'])
+            ->onlyMethods(['getConnection'])
             ->setConstructorArgs(['stompFakeStream://notInUse'])
             ->getMock();
         $fakeStreamResource = fopen('stompFakeStream://notInUse', 'rw');
@@ -235,7 +234,7 @@ class ConnectionTest extends TestCase
         fclose($fakeStreamResource);
         stream_wrapper_unregister('stompFakeStream');
         if (!$exception) {
-            $this->fail('Excepted exception.');
+            $this->fail('Expected exception.');
         }
         throw $exception;
     }
