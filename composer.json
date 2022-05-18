@@ -39,5 +39,8 @@
         "psr-4": {
             "Stomp\\Tests\\": "tests/"
         }
+    },
+    "replace": {
+        "stomp-php/stomp-php": "5.0.*"
     }
 }
