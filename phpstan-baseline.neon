@@ -1,0 +1,31 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Offset 'message' on array\\{type\\: int, message\\: string, file\\: string, line\\: int\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Network/Connection.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/Network/Connection.php
+
+		-
+			message: "#^Variable \\$read in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: src/Network/Connection.php
+
+		-
+			message: "#^Comparison operation \"\\<\" between 0 and int\\<1, max\\> is always true\\.$#"
+			count: 1
+			path: src/Transport/Parser.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/Util/IdGenerator.php
+
+		-
+			message: "#^Unsafe access to private property Stomp\\\\Util\\\\IdGenerator\\:\\:\\$generatedIds through static\\:\\:\\.$#"
+			count: 4
+			path: src/Util/IdGenerator.php
